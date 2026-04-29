@@ -9,22 +9,19 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# FULL DARK THEME CSS
+# CSS styling
 st.markdown("""
 <style>
-/* Whole app background */
 .stApp {
     background-color: #0b0b0b;
     color: white;
 }
 
-/* Main block */
 .main .block-container {
     padding-top: 2rem;
     max-width: 1000px;
 }
 
-/* Title */
 .title {
     text-align: center;
     font-size: 4rem;
@@ -33,7 +30,6 @@ st.markdown("""
     margin-bottom: 0.3rem;
 }
 
-/* Subtitle */
 .subtitle {
     text-align: center;
     font-size: 1.2rem;
@@ -41,7 +37,6 @@ st.markdown("""
     margin-bottom: 2rem;
 }
 
-/* Input box */
 .stTextInput input {
     background-color: #1a1a1a !important;
     color: white !important;
@@ -50,7 +45,6 @@ st.markdown("""
     padding: 12px !important;
 }
 
-/* Button */
 .stButton button {
     width: 100%;
     background-color: #e50914;
@@ -61,7 +55,6 @@ st.markdown("""
     border: none;
 }
 
-/* Cards */
 .card {
     background: #141414;
     border-radius: 16px;
@@ -71,7 +64,6 @@ st.markdown("""
     border: 1px solid #222;
 }
 
-/* Rating */
 .rating {
     color: #ffd700;
     font-weight: bold;
@@ -81,40 +73,40 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Title
-st.markdown(
-    '<div class="title">⛩️ AniTime ⛩️</div>',
-    unsafe_allow_html=True
-)
+st.markdown('<div class="title">⛩️ AniTime ⛩️</div>', unsafe_allow_html=True)
+st.markdown('<div class="subtitle">AI anime recommendations based on your mood 🍜</div>', unsafe_allow_html=True)
 
-st.markdown(
-    '<div class="subtitle">AI anime recommendations based on your mood🍜</div>',
-    unsafe_allow_html=True
-)
+# Input
+query = st.text_input("", placeholder="Try: Naruto, romance, action fantasy...")
 
-# # Input
-query = st.text_input(
-    "",
-    placeholder="Try: horror, romance, action fantasy..."
-)
-
-# Center button
+# Button (centered)
 col1, col2, col3 = st.columns([1, 2, 1])
-
 with col2:
     clicked = st.button("✨ Get Recommendations", use_container_width=True)
 
+# Logic
 if clicked:
-    if query:
+    if query.strip():
         results = search_anime(query)
 
-        st.markdown("## 🌟 Top Picks For You")
+        if results.empty:
+            st.warning("No anime found. Try another name.")
+        else:
+            st.markdown("## 🌟 Top Picks For You")
 
-        for row in results.itertuples():
-            st.markdown(f"""
-            <div class="card">
-                <h2>🎥 {row.name}</h2>
-                <p><b>🎭 Genre:</b> {row.genre}</p>
-                <p><b>📺 Type:</b> {row.type}</p>
-                <p class="rating">⭐ Rating: {row.rating}</p>
-            </div>
-            """, unsafe_allow_html=True)
+            for row in results.itertuples():
+                name = row.name if row.name else "N/A"
+                genre = row.genre if row.genre else "N/A"
+                typ = row.type if row.type else "N/A"
+                rating = row.rating if row.rating else "N/A"
+
+                st.markdown(f"""
+                <div class="card">
+                    <h2>🎥 {name}</h2>
+                    <p><b>🎭 Genre:</b> {genre}</p>
+                    <p><b>📺 Type:</b> {typ}</p>
+                    <p class="rating">⭐ Rating: {rating}</p>
+                </div>
+                """, unsafe_allow_html=True)
+    else:
+        st.warning("Please enter something")
