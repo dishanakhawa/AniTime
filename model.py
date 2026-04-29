@@ -1,48 +1,28 @@
 import pandas as pd
-import numpy as np
-import faiss
-from sentence_transformers import SentenceTransformer
-import os
-
-# File path
-file_path = os.path.join(os.path.dirname(__file__), "anime_cleaned.csv")
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 # Load dataset
-df = pd.read_csv(file_path)
+df = pd.read_csv("anime.csv")
 
-# Remove missing values
-df = df.dropna()
+# Combine text features (adjust column names if needed)
+df["combined"] = df["Name"] + " " + df["Genres"].fillna("")
 
-# Create description
-df["description"] = (
-    df["name"].astype(str) + " " +
-    df["genre"].astype(str) + " " +
-    df["type"].astype(str)
-)
+# Convert text → vectors
+vectorizer = TfidfVectorizer(stop_words="english")
+tfidf_matrix = vectorizer.fit_transform(df["combined"])
 
-# Load model
-model = SentenceTransformer("all-MiniLM-L6-v2")
+# Similarity matrix
+similarity = cosine_similarity(tfidf_matrix)
 
-# Save embeddings for faster reload
-embedding_path = "anime_embeddings.npy"
+def search_anime(query):
+    idx = df[df["Name"].str.lower() == query.lower()].index
 
-if os.path.exists(embedding_path):
-    embeddings = np.load(embedding_path)
-else:
-    embeddings = model.encode(df["description"].tolist())
-    np.save(embedding_path, embeddings)
+    if len(idx) == 0:
+        return ["Anime not found"]
 
-# Create FAISS index
-dimension = embeddings.shape[1]
-index = faiss.IndexFlatL2(dimension)
-index.add(np.array(embeddings).astype("float32"))
+    idx = idx[0]
+    scores = list(enumerate(similarity[idx]))
+    scores = sorted(scores, key=lambda x: x[1], reverse=True)[1:6]
 
-def search_anime(query, top_n=5):
-    query_embedding = model.encode([query])
-
-    distances, indices = index.search(
-        np.array(query_embedding).astype("float32"), top_n
-    )
-
-    return df.iloc[indices[0]]
-
+    return [df.iloc[i[0]]["Name"] for i in scores]
